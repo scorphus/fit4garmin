@@ -1,0 +1,5 @@
+.venv
+*.fit
+convert_fit.py
+__pycache__
+.git
