@@ -49,14 +49,22 @@ PROCESS_ORDER = [
 ]
 
 
-def convert_fit_bytes(data: bytes) -> bytes:
-    """Convert FIT file bytes: spoof manufacturer to Garmin."""
+def convert_fit_bytes(data: bytes, with_info: bool = False):
+    """Convert FIT file bytes: spoof manufacturer to Garmin.
+
+    With with_info=True, returns (bytes, info) where info carries the
+    session start_time (UTC datetime) for locating the activity on
+    Garmin Connect after upload.
+    """
     stream = Stream.from_byte_array(bytearray(data))
     decoder = Decoder(stream)
     messages, errors = decoder.read()
 
     if errors:
         raise ValueError(f"Errors reading FIT file: {errors}")
+
+    sessions = messages.get("session_mesgs") or []
+    info = {"start_time": sessions[0].get("start_time") if sessions else None}
 
     encoder = Encoder()
 
@@ -84,7 +92,8 @@ def convert_fit_bytes(data: bytes) -> bytes:
 
             encoder.write_mesg(m)
 
-    return bytes(encoder.close())
+    result = bytes(encoder.close())
+    return (result, info) if with_info else result
 
 
 def convert_fit(input_path: str, output_path: str) -> dict:

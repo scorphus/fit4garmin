@@ -31,7 +31,8 @@ from pathlib import Path
 from garminconnect import Garmin, GarminConnectAuthenticationError
 
 sys.path.insert(0, str(Path(__file__).parent / "src"))
-from fit4garmin.convert import convert_fit  # noqa: E402
+from fit4garmin.convert import convert_fit, convert_fit_bytes  # noqa: E402
+from fit4garmin.garmin import activity_url, find_activity_id  # noqa: E402
 
 TOKENSTORE = Path.home() / ".garminconnect"
 
@@ -113,11 +114,15 @@ def cmd_upload(args):
 
         try:
             print(f"Converting {input_path}...")
-            convert_fit(str(input_path), tmp_path)
+            converted, info = convert_fit_bytes(input_path.read_bytes(), with_info=True)
+            Path(tmp_path).write_bytes(converted)
 
-            print(f"Uploading to Garmin Connect...")
-            result = garmin.upload_activity(tmp_path)
-            print(f"Uploaded: {input_path.name} -> {result}")
+            print("Uploading to Garmin Connect...")
+            garmin.upload_activity(tmp_path)
+            print(f"Uploaded: {input_path.name}")
+            url = activity_url(find_activity_id(garmin, info.get("start_time")))
+            if url:
+                print(f"Activity: {url}")
         finally:
             os.unlink(tmp_path)
 

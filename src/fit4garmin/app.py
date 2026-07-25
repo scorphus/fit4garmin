@@ -22,6 +22,7 @@ from garminconnect import (
 )
 
 from .convert import convert_fit_bytes
+from .garmin import activity_url, find_activity_id
 from .security import SESSION_TTL, seal, unseal
 
 app = FastAPI(title="fit4garmin")
@@ -321,7 +322,10 @@ _FOOT = """
         const data = await resp.json();
         out.innerHTML = data.results.map(r => {
           const name = r.name.replace(/&/g, "&amp;").replace(/</g, "&lt;");
-          const detail = r.detail.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+          let detail = r.detail.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+          if (r.url && /^https:\\/\\/connect\\.garmin\\.com\\//.test(r.url)) {
+            detail = '<a href="' + r.url + '" target="_blank" rel="noopener">' + detail + "</a>";
+          }
           return '<p><span class="name">' + name + '</span>' +
                  '<span class="status' + (r.ok ? "" : " err") + '">' + detail + "</span></p>";
         }).join("");
@@ -481,22 +485,28 @@ async def upload(request: Request, files: list[UploadFile] = File(...)):
     results = []
     for f in files:
         name = f.filename or "activity.fit"
+        start_time = None
         try:
             data = await f.read()
-            converted = convert_fit_bytes(data)
+            converted, info = convert_fit_bytes(data, with_info=True)
+            start_time = info.get("start_time")
             with tempfile.NamedTemporaryFile(suffix=".fit", delete=False) as tmp:
                 tmp.write(converted)
                 tmp_path = tmp.name
             try:
                 garmin.upload_activity(tmp_path)
-                results.append({"ok": True, "name": name, "detail": "Uploaded"})
+                url = activity_url(find_activity_id(garmin, start_time))
+                results.append({"ok": True, "name": name, "detail": "Uploaded", "url": url})
             finally:
                 Path(tmp_path).unlink(missing_ok=True)
         except Exception as e:
             detail = str(e)
+            url = None
             if "409" in detail or "duplicate" in detail.lower():
                 detail = "Already in Garmin Connect"
-            results.append({"ok": False, "name": name, "detail": detail})
+                # The activity exists — link it by start time (single try)
+                url = activity_url(find_activity_id(garmin, start_time, attempts=1))
+            results.append({"ok": False, "name": name, "detail": detail, "url": url})
 
     response = JSONResponse({"results": results})
     _set_session(response, garmin)
