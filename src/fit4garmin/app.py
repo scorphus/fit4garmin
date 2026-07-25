@@ -59,7 +59,7 @@ _SHA = _build_sha()
 _FOOTER = (
     f'<footer><a href="{REPO_URL}">GitHub</a> — v{__version__}'
     + (f' (<a href="{REPO_URL}/commit/{_SHA}">{_SHA[:8]}</a>)' if _SHA else "")
-    + "</footer>"
+    + ' · <a href="/privacy">Privacy</a></footer>'
 )
 
 COOKIE = "f4g_session"
@@ -409,7 +409,7 @@ def _login_page(error: str = "") -> HTMLResponse:
 Training Effect and training load, like they were recorded on a Garmin.</p>
 <p class="muted">Your password is only used to sign in with Garmin and is
 never stored. Your session stays encrypted in this browser — nothing is
-kept on this server.</p>
+kept on this server. <a href="/privacy">How your data is handled</a>.</p>
 {err}
 <form method="post" action="/login">
   <input name="email" type="email" placeholder="Garmin email" required autofocus autocomplete="email">
@@ -559,6 +559,51 @@ async def upload(request: Request, files: list[UploadFile] = File(...)):
     response = JSONResponse({"results": results})
     _set_session(response, garmin)
     return response
+
+
+@app.get("/privacy", response_class=HTMLResponse)
+async def privacy():
+    return _page("""
+<h1>Privacy</h1>
+<p class="muted">Last updated: July 2026 · This page is versioned in the
+repository — the footer links the exact code this deployment runs.</p>
+
+<p><b>What this is.</b> A small personal tool that re-encodes FIT files and
+uploads them to your own Garmin Connect account. It is not affiliated with
+Garmin or Wahoo.</p>
+
+<p><b>Your password.</b> Used once, to sign in with Garmin when you submit
+the sign-in form. It is not stored, written to disk, or logged.</p>
+
+<p><b>Your session.</b> Signing in produces Garmin OAuth tokens. They are
+compressed, encrypted, and stored as a cookie in your own browser — this
+server keeps no copy and no database. The server can only use the tokens
+while handling a request you send. Signing out or deleting the cookie ends
+the session for good. During two-step verification, sign-in state is held
+in server memory for up to 10 minutes, then discarded.</p>
+
+<p><b>Your files.</b> Uploaded FIT files are converted in memory, sent to
+Garmin, and immediately deleted. They are not retained.</p>
+
+<p><b>What is displayed.</b> Your name, VO2max, and resting heart rate are
+fetched from Garmin to show on your dashboard. They are not stored.</p>
+
+<p><b>Cookies and trackers.</b> One functional session cookie, plus your
+theme preference in your browser's local storage. No analytics, no
+trackers, no third-party requests — fonts included are served from this
+domain.</p>
+
+<p><b>Hosting.</b> The app runs on Vercel, which keeps standard access
+logs (IP address, request time) per
+<a href="https://vercel.com/legal/privacy-policy">Vercel's privacy
+policy</a>. Your requests to Garmin are subject to
+<a href="https://www.garmin.com/privacy/connect/policy/">Garmin's</a>.</p>
+
+<p><b>Nothing is sold or shared.</b> There is no data to sell — that is
+the point of the design.</p>
+
+<p><b>Questions?</b> Open an issue on
+<a href="https://github.com/scorphus/fit4garmin/issues">GitHub</a>.</p>""")
 
 
 @app.post("/logout")
