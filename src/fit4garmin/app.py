@@ -17,6 +17,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from garminconnect import (
     Garmin,
     GarminConnectAuthenticationError,
@@ -29,6 +30,12 @@ from .garmin import activity_url, find_activity_id
 from .security import SESSION_TTL, seal, unseal
 
 app = FastAPI(title="fit4garmin")
+
+# Local dev only — on Vercel, public/ is served by the CDN before the
+# rewrite to this app ever runs.
+_public = Path(__file__).parent.parent.parent / "public"
+if _public.is_dir():
+    app.mount("/fonts", StaticFiles(directory=_public / "fonts"), name="fonts")
 
 REPO_URL = "https://github.com/scorphus/fit4garmin"
 
@@ -109,10 +116,14 @@ _HEAD = """<!doctype html>
     if (t) document.documentElement.dataset.theme = t;
   } catch (e) {}
 </script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;600&display=swap" rel="stylesheet">
 <style>
+  @font-face {
+    font-family: "Instrument Sans";
+    font-style: normal;
+    font-weight: 400 600;
+    font-display: swap;
+    src: url("/fonts/instrument-sans-latin.woff2") format("woff2");
+  }
   :root {
     --bg: #FAFAF9;
     --ink: #17191B;
