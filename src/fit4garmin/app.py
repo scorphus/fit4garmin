@@ -7,6 +7,8 @@ roundtrip on a warm instance.
 """
 
 import html
+import os
+import subprocess
 import tempfile
 import time
 import uuid
@@ -21,11 +23,37 @@ from garminconnect import (
     GarminConnectTooManyRequestsError,
 )
 
+from . import __version__
 from .convert import convert_fit_bytes
 from .garmin import activity_url, find_activity_id
 from .security import SESSION_TTL, seal, unseal
 
 app = FastAPI(title="fit4garmin")
+
+REPO_URL = "https://github.com/scorphus/fit4garmin"
+
+
+def _build_sha() -> str:
+    # On Vercel git-connected deploys this is set by the platform and can't
+    # be faked by the deployer — the basis of the verifiable-deploy chain.
+    sha = os.getenv("VERCEL_GIT_COMMIT_SHA")
+    if sha:
+        return sha
+    # Local dev fallback — informational only, not trustworthy
+    try:
+        return subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL, text=True
+        ).strip()
+    except Exception:
+        return ""
+
+
+_SHA = _build_sha()
+_FOOTER = (
+    f'<footer><a href="{REPO_URL}">GitHub</a> — v{__version__}'
+    + (f' (<a href="{REPO_URL}/commit/{_SHA}">{_SHA[:8]}</a>)' if _SHA else "")
+    + "</footer>"
+)
 
 COOKIE = "f4g_session"
 
@@ -264,6 +292,15 @@ _HEAD = """<!doctype html>
     align-items: baseline;
     gap: 1rem;
   }
+  footer {
+    margin-top: 4rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: .75rem;
+    font-variant-numeric: tabular-nums;
+  }
+  footer a { color: inherit; }
   @media (prefers-reduced-motion: reduce) {
     * { transition: none !important; }
   }
@@ -350,7 +387,7 @@ _FOOT = """
 
 
 def _page(body: str, status_code: int = 200) -> HTMLResponse:
-    return HTMLResponse(_HEAD + body + _FOOT, status_code=status_code)
+    return HTMLResponse(_HEAD + body + _FOOTER + _FOOT, status_code=status_code)
 
 
 def _login_page(error: str = "") -> HTMLResponse:
