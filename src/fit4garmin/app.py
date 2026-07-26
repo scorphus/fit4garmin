@@ -46,6 +46,10 @@ if _public.is_dir():
     async def favicon():
         return FileResponse(_public / "favicon.svg", media_type="image/svg+xml")
 
+    @app.get("/og.png", include_in_schema=False)
+    async def og_image():
+        return FileResponse(_public / "og.png", media_type="image/png")
+
 REPO_URL = "https://github.com/scorphus/fit4garmin"
 
 
@@ -119,6 +123,15 @@ _HEAD = """<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>fit4garmin</title>
+<meta name="description" content="Upload Wahoo and other non-Garmin rides to Garmin Connect and get Training Effect and training load.">
+<meta property="og:title" content="fit4garmin">
+<meta property="og:description" content="Upload Wahoo and other non-Garmin rides to Garmin Connect and get Training Effect and training load.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://fit4garmin.vercel.app/">
+<meta property="og:image" content="https://fit4garmin.vercel.app/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <script>
   try {
