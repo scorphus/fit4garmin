@@ -1,4 +1,4 @@
-# fit4garmin
+# <img src="public/favicon.svg" width="32" align="absmiddle" alt=""> fit4garmin
 
 Upload Wahoo (or any non-Garmin) rides to Garmin Connect *with* Training
 Effect and training load.
