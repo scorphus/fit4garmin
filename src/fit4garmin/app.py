@@ -22,7 +22,6 @@ from fastapi.responses import (
     JSONResponse,
     RedirectResponse,
 )
-from fastapi.staticfiles import StaticFiles
 from garminconnect import (
     Garmin,
     GarminConnectAuthenticationError,
@@ -40,8 +39,6 @@ app = FastAPI(title="fit4garmin")
 # rewrite to this app ever runs.
 _public = Path(__file__).parent.parent.parent / "public"
 if _public.is_dir():
-    app.mount("/fonts", StaticFiles(directory=_public / "fonts"), name="fonts")
-
     @app.get("/favicon.svg", include_in_schema=False)
     async def favicon():
         return FileResponse(_public / "favicon.svg", media_type="image/svg+xml")
@@ -141,13 +138,6 @@ _HEAD = """<!doctype html>
   } catch (e) {}
 </script>
 <style>
-  @font-face {
-    font-family: "Instrument Sans";
-    font-style: normal;
-    font-weight: 400 600;
-    font-display: swap;
-    src: url("/fonts/instrument-sans-latin.woff2") format("woff2");
-  }
   :root {
     --bg: #FAFAF9;
     --ink: #17191B;
@@ -179,7 +169,7 @@ _HEAD = """<!doctype html>
     margin: 0;
     background: var(--bg);
     color: var(--ink);
-    font-family: "Instrument Sans", system-ui, sans-serif;
+    font-family: system-ui, sans-serif;
     font-size: 15px;
     line-height: 1.55;
     -webkit-font-smoothing: antialiased;
@@ -618,8 +608,7 @@ fetched from Garmin to show on your dashboard. They are not stored.</p>
 
 <p><b>Cookies and trackers.</b> One functional session cookie, plus your
 theme preference in your browser's local storage. No analytics, no
-trackers, no third-party requests — fonts included are served from this
-domain.</p>
+trackers, no third-party requests.</p>
 
 <p><b>Hosting.</b> The app runs on Vercel, which keeps standard access
 logs (IP address, request time) per
