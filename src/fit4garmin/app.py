@@ -16,7 +16,12 @@ from datetime import date
 from pathlib import Path
 
 from fastapi import FastAPI, File, Form, Request, UploadFile
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import (
+    FileResponse,
+    HTMLResponse,
+    JSONResponse,
+    RedirectResponse,
+)
 from fastapi.staticfiles import StaticFiles
 from garminconnect import (
     Garmin,
@@ -36,6 +41,10 @@ app = FastAPI(title="fit4garmin")
 _public = Path(__file__).parent.parent.parent / "public"
 if _public.is_dir():
     app.mount("/fonts", StaticFiles(directory=_public / "fonts"), name="fonts")
+
+    @app.get("/favicon.svg", include_in_schema=False)
+    async def favicon():
+        return FileResponse(_public / "favicon.svg", media_type="image/svg+xml")
 
 REPO_URL = "https://github.com/scorphus/fit4garmin"
 
@@ -110,6 +119,7 @@ _HEAD = """<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>fit4garmin</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <script>
   try {
     var t = localStorage.getItem("f4g-theme");
