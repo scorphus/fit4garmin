@@ -122,9 +122,10 @@ _HEAD = """<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>fit4garmin</title>
+<title>fit4garmin — training load for Wahoo rides on Garmin Connect</title>
 <meta name="description" content="Upload Wahoo and other non-Garmin rides to Garmin Connect and get Training Effect and training load.">
 <meta property="og:title" content="fit4garmin">
+<meta property="og:site_name" content="fit4garmin">
 <meta property="og:description" content="Upload Wahoo and other non-Garmin rides to Garmin Connect and get Training Effect and training load.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://fit4garmin.vercel.app/">
